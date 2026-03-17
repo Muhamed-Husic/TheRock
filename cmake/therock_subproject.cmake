@@ -969,7 +969,7 @@ function(therock_cmake_subproject_activate target_name)
         "-DCMAKE_INSTALL_PREFIX=${_stage_destination_dir}"
         "-DTHEROCK_STAGE_INSTALL_ROOT=${_stage_dir}"
         "-DCMAKE_TOOLCHAIN_FILE=${_cmake_project_toolchain_file}"
-        "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=${_cmake_project_init_file}"
+        "-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=${CMAKE_SOURCE_DIR}/cmake/_preload_sysdeps.cmake\;${_cmake_project_init_file}"
         ${_cmake_args}
       # CMake doesn't always generate a compile_commands.json so touch one to keep
       # the build graph sane.
@@ -1397,6 +1397,14 @@ function(_therock_cmake_subproject_setup_toolchain
   set(_build_env_pairs "${_build_env_pairs}")
   set(_toolchain_contents)
 
+  
+  get_target_property(_cmake_project_init_file "${target_name}" THEROCK_CMAKE_PROJECT_INIT_FILE)
+    if(NOT _cmake_project_init_file)
+      message(FATAL_ERROR
+        "THEROCK_CMAKE_PROJECT_INIT_FILE not set for ${target_name} (internal generator contract)")
+  endif()
+
+
   get_target_property(_disable_amdgpu_targets "${target_name}" THEROCK_DISABLE_AMDGPU_TARGETS)
   set(_filtered_gpu_targets)
   if(NOT _disable_amdgpu_targets)
@@ -1573,6 +1581,30 @@ function(_therock_cmake_subproject_setup_toolchain
   set(_compiler_toolchain_init_contents "${_compiler_toolchain_init_contents}" PARENT_SCOPE)
   set(_build_env_pairs "${_build_env_pairs}" PARENT_SCOPE)
   file(CONFIGURE OUTPUT "${toolchain_file}" CONTENT "${_toolchain_contents}" @ONLY ESCAPE_QUOTES)
+
+  
+  # Make the toolchain contents concrete (replace @VAR@ placeholders)
+  #    _toolchain_contents is already assembled above in the function.
+  string(CONFIGURE "${_toolchain_contents}" _toolchain_configured @ONLY)
+
+  # Ensure parent directories exist for both files
+  get_filename_component(_tc_dir   "${toolchain_file}"            DIRECTORY)
+  get_filename_component(_init_dir "${_cmake_project_init_file}"  DIRECTORY)
+  file(MAKE_DIRECTORY "${_tc_dir}")
+  file(MAKE_DIRECTORY "${_init_dir}")
+
+  # Write the toolchain file
+  file(WRITE "${toolchain_file}" "${_toolchain_configured}")
+
+  # Minimal _init.cmake: includes provider and global post-hook from TheRock
+  set(_init_contents
+  "set(THEROCK_SOURCE_DIR \"@THEROCK_SOURCE_DIR@\")
+  include(\"@THEROCK_SOURCE_DIR@/cmake/therock_subproject_dep_provider.cmake\")
+  include(\"@THEROCK_SOURCE_DIR@/cmake/therock_global_post_subproject.cmake\")
+  ")
+  string(CONFIGURE "${_init_contents}" _init_configured @ONLY)
+  file(WRITE "${_cmake_project_init_file}" "${_init_configured}")
+
 endfunction()
 
 

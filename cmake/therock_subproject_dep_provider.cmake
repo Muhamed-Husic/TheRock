@@ -41,6 +41,24 @@ block(PROPAGATE CMAKE_PREFIX_PATH)
   endif()
 endblock()
 
+# --- TheRock-provided yaml-cpp ---------------------------------------
+
+list(APPEND THEROCK_PROVIDED_PACKAGES yaml-cpp)
+
+# compute the superbuild root from the child CMAKE_BINARY_DIR
+set(_therock_super "${CMAKE_BINARY_DIR}")
+foreach(_i RANGE 1 3)
+  cmake_path(GET _therock_super PARENT_PATH _therock_super)
+endforeach()
+
+# roots with CMake packages (stage and dist)
+set(THEROCK_PACKAGE_DIR_yaml-cpp
+    "${_therock_super}/third-party/yaml-cpp/stage/lib/cmake"
+    "${_therock_super}/third-party/yaml-cpp/dist/lib/cmake"
+    CACHE PATH "TheRock sysdep cmake roots for yaml-cpp" FORCE)
+
+# --- TheRock-provided yaml-cpp -----------------------------------------
+
 macro(therock_dependency_provider method package_name)
   cmake_policy(PUSH)
   cmake_policy(SET CMP0057 NEW)
