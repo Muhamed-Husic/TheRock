@@ -9,6 +9,12 @@ if(THEROCK_ENABLE_ROCPROFV3)
     set(_openmpi_optional_dep therock-openmpi)
   endif()
 
+  
+  set(_rocprof_use_sys_yaml_cpp OFF)
+  if(NOT THEROCK_BUNDLE_SYSDEPS)
+    set(_rocprof_use_sys_yaml_cpp ON)
+  endif()
+
   ##############################################################################
   # rocprof-trace-decoder-binary
   # The trace decoder is responsible for decoding advanced thread traces from
@@ -95,17 +101,17 @@ if(THEROCK_ENABLE_ROCPROFV3)
     BACKGROUND_BUILD
     CMAKE_ARGS
       -DHIP_PLATFORM=amd
-      -DROCPROF_USE_SYS_YAML_CPP=ON
+      -DROCPROF_USE_SYS_YAML_CPP=${_rocprof_use_sys_yaml_cpp}
       -DROCPROFILER_PYTHON_VERSIONS:STRING="${_detected_python_versions_str}"
     CMAKE_INCLUDES
       therock_explicit_finders.cmake
     COMPILER_TOOLCHAIN
       amd-hip
     RUNTIME_DEPS
-      therock-yaml-cpp
       aqlprofile
       hip-clr
       rocprofiler-register
+      ${THEROCK_BUNDLED_YAMLCPP}
       ${_rocprofiler_sdk_optional_deps}
       ${THEROCK_BUNDLED_ELFUTILS}
       ${THEROCK_BUNDLED_LIBDRM}
