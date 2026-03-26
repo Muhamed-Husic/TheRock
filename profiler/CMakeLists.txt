@@ -7,6 +7,11 @@ if(THEROCK_ENABLE_ROCPROFV3)
     set(_openmpi_optional_dep therock-openmpi)
   endif()
 
+  set(_rocprofsys_build_elfutils ON)
+  if(THEROCK_BUNDLED_ELFUTILS)
+    set(_rocprofsys_build_elfutils OFF)
+  endif()
+
   ##############################################################################
   # rocprof-trace-decoder
   # The trace decoder is responsible for decoding advanced thread traces from the
@@ -263,7 +268,7 @@ if(THEROCK_ENABLE_ROCPROFV3)
       BACKGROUND_BUILD
       CMAKE_ARGS
         -DHIP_PLATFORM=amd
-        -DROCPROFSYS_BUILD_ELFUTILS=ON
+        -DROCPROFSYS_BUILD_ELFUTILS=${_rocprofsys_build_elfutils}
         -DROCPROFSYS_BUILD_TBB=ON
         -DROCPROFSYS_BUILD_LIBIBERTY=ON
         -DROCPROFSYS_BUILD_BOOST=ON
@@ -287,6 +292,7 @@ if(THEROCK_ENABLE_ROCPROFV3)
         hip-clr
         rocprofiler-register
         rocprofiler-sdk
+        ${THEROCK_BUNDLED_ELFUTILS}
         ${THEROCK_BUNDLED_LIBDRM}
         ${THEROCK_BUNDLED_SQLITE3}
         ${_openmpi_optional_dep}
